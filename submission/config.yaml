@@ -1,0 +1,5 @@
+# 提交配置：指定本提交默认使用的攻击 / 防御方法（对应 registry 名称）
+# 也可直接在项目根 config.yaml 的 submission 段修改。
+submission:
+  attack: soft_label       # hard_label | soft_label | active_query
+  defense: smoothing       # none | rounding | smoothing | sharpening | noise
