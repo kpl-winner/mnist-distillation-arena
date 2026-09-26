@@ -1,0 +1,68 @@
+# ============================================================
+# MNIST 黑盒模型蒸馏攻防对抗赛 - 全局配置
+# ============================================================
+
+# 全局随机种子（多轮评测时按 permutation/seed 索引偏移）
+seed: 42
+device: cpu          # cpu | cuda
+
+data:
+  root: ./data       # MNIST 原始文件与缓存存放目录
+  # 数据集划分规模（来自 spec 第六节推荐）
+  splits:
+    victim_train: 50000
+    query_pool: 10000
+    hidden_test: 10000
+  # 归一化：MNIST 像素 [0,255] -> [0,1]，再按均值/方差标准化
+  normalize:
+    mean: 0.1307
+    std: 0.3081
+
+# 基础目标模型 (Victim Model)
+victim:
+  arch: victim_cnn     # judge/victim_model.py 中注册的结构
+  epochs: 10
+  batch_size: 128
+  lr: 0.001
+  weight_decay: 0.0001
+  acc_threshold: 0.97   # spec 第八节：Acc_victim >= 97%
+  max_retrains: 3       # 未达标则重新训练的最大次数
+  checkpoint_dir: ./checkpoints
+
+# 统一学生模型 (Student Model)，参数量 <= 1M
+student:
+  arch: student_cnn
+  epochs: 15
+  batch_size: 64
+  lr: 0.001
+  weight_decay: 0.0001
+  # 蒸馏温度（对 soft label 攻击的 KL 损失）
+  temperature: 4.0
+
+# 查询预算（spec 第十一节）
+query:
+  budget: 500           # 公开赛道 Q=500
+
+# 评测控制（spec 第三十九/四十节）
+evaluation:
+  num_permutations: 1   # 随机标签置换数量
+  num_seeds: 1          # 随机种子数量
+  attack_qualification: # spec 第三十四节 攻击资格线
+    min_label_agreement: 0.80
+    min_attack_score: 0.75
+  defense_label_error_limit: 0.10   # spec 第十五节 硬性约束
+  # 隐藏测试集评测时使用的样本数（None 表示全部）
+  eval_subset: null
+
+# 参与本轮评测的攻击 / 防御方法（名称对应 registry）
+methods:
+  attacks:  [hard_label, soft_label, active_query]
+  defenses: [none, rounding, smoothing, sharpening, noise]
+
+results_dir: ./results
+
+# 提交接口默认选用的方法（submission/attack.py / defense.py 读取）
+submission:
+  attack: soft_label
+  defense: smoothing
+
